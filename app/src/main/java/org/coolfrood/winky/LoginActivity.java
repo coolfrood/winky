@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -97,6 +98,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        Log.d("LoginActivity", "here1");
+
         if (api.isLoggedIn()) {
             verifyLogin();
             return;
@@ -327,6 +330,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         @Override
         protected void onPostExecute(final Boolean success) {
             mVerifyTask = null;
+            Log.e("LoginActivity", "verify login success=" + success);
 
             if (success) {
                 startActivity(new Intent(LoginActivity.this, Groups.class));

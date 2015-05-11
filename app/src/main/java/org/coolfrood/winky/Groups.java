@@ -1,5 +1,6 @@
 package org.coolfrood.winky;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
@@ -10,21 +11,22 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class Groups extends ActionBarActivity {
+public class Groups extends Activity {
 
     private ListView listView;
-    List<Bulb> bulbs = new ArrayList<>();
-    private GetDevicesTask getDevicesTask;
+    private RefreshDevicesTask refreshDevicesTask;
     private ToggleDevicesTask toggleDevicesTask;
+    private GetDevicesTask getDevicesTask;
     private ArrayAdapter<Bulb> adapter;
     private NfcAdapter nfcAdapter;
+    private DeviceDb deviceDb;
+    private TagDb tagDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,26 +34,31 @@ public class Groups extends ActionBarActivity {
         setContentView(R.layout.activity_groups);
 
         listView = (ListView) findViewById(R.id.devices);
-        bulbs.clear();
+        WinkyContext.bulbs.clear();
         adapter = new ArrayAdapter<>(getApplicationContext(),
-                android.R.layout.simple_list_item_1, bulbs);
+                android.R.layout.simple_list_item_1, WinkyContext.bulbs);
         listView.setAdapter(adapter);
         nfcAdapter = NfcAdapter.getDefaultAdapter(getApplicationContext());
-        refresh();
+        deviceDb = new DeviceDb(getApplicationContext());
+        tagDb = new TagDb(getApplicationContext());
+        getDevices();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        PendingIntent intent = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
-                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-        nfcAdapter.enableForegroundDispatch(this, intent, null, null);
+        if (nfcAdapter != null) {
+            PendingIntent intent = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+            nfcAdapter.enableForegroundDispatch(this, intent, null, null);
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        nfcAdapter.disableForegroundDispatch(this);
+        if (nfcAdapter != null)
+            nfcAdapter.disableForegroundDispatch(this);
     }
 
     @Override
@@ -60,7 +67,14 @@ public class Groups extends ActionBarActivity {
         toggleDevices();
     }
 
-    private void refresh() {
+    private void refreshDevices() {
+        if (refreshDevicesTask != null)
+            return;
+        refreshDevicesTask = new RefreshDevicesTask();
+        refreshDevicesTask.execute((Void) null);
+    }
+
+    private void getDevices() {
         if (getDevicesTask != null)
             return;
         getDevicesTask = new GetDevicesTask();
@@ -78,7 +92,7 @@ public class Groups extends ActionBarActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_groups, menu);
-        return true;
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -91,47 +105,84 @@ public class Groups extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_refresh) {
+            refreshDevices();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
     /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
+     * Fetch all devices from web service and update the database
      */
-    public class GetDevicesTask extends AsyncTask<Void, Void, List<Bulb>> {
+    public class RefreshDevicesTask extends AsyncTask<Void, Void, List<Bulb>> {
 
         @Override
         protected List<Bulb> doInBackground(Void... params) {
-            return WinkyContext.getApi(getApplicationContext()).getBulbs();
+            List<Bulb> bulbs = WinkyContext.getApi(getApplicationContext()).getBulbs();
+            deviceDb.mergeWithUpdate(bulbs);
+            return bulbs;
         }
 
         @Override
         protected void onPostExecute(final List<Bulb> bulbs) {
-            Groups.this.bulbs.addAll(bulbs);
+            WinkyContext.bulbs.clear();
+            WinkyContext.bulbs.addAll(bulbs);
             adapter.notifyDataSetChanged();
-            getDevicesTask = null;
+            refreshDevicesTask = null;
 
         }
-
     }
+
+    private class Data {
+        List<Bulb> bulbs;
+        List<NfcTag> tags;
+    }
+
+    public class GetDevicesTask extends AsyncTask<Void, Void, Data> {
+        @Override
+        protected Data doInBackground(Void... params) {
+            Data data = new Data();
+            data.bulbs = deviceDb.getBulbs();
+            data.tags = tagDb.getTags(false);
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(final Data data) {
+            WinkyContext.tags.clear();
+            for (NfcTag tag: data.tags) {
+                WinkyContext.tags.put(tag.id, tag);
+            }
+            WinkyContext.bulbs.addAll(data.bulbs);
+            adapter.notifyDataSetChanged();
+            getDevicesTask = null;
+            if (data.bulbs.isEmpty()) {
+                // no devices contained in the database, kick off a web refresh
+                refreshDevices();
+            }
+        }
+    }
+
+
     public class ToggleDevicesTask extends AsyncTask<Void, Void, Boolean> {
 
         @Override
         protected Boolean doInBackground(Void... params) {
             int numOn = 0;
-            for (Bulb b: bulbs) {
+            for (Bulb b: WinkyContext.bulbs) {
                 if (b.powered) numOn++;
             }
             boolean powered = false;
-            if (numOn < bulbs.size()/2) {
+            if (numOn < WinkyContext.bulbs.size()/2) {
                 powered = true;
             }
             Log.d("Groups", "switching all bulbs to powered=" + powered);
-            for (Bulb b: bulbs) {
+            for (Bulb b: WinkyContext.bulbs) {
                 WinkyContext.getApi(getApplicationContext()).changeBulbState(b, powered);
             }
+            deviceDb.update(WinkyContext.bulbs);
             return true;
         }
 

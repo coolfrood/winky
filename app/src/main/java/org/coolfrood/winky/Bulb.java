@@ -1,20 +1,37 @@
 package org.coolfrood.winky;
 
-/**
- * Created by akshat on 5/9/15.
- */
+import java.util.ArrayList;
+import java.util.List;
+
 public class Bulb {
-    public String id;
+    public int id;
     public String name;
     public boolean powered;
+    public List<Integer> tags;
 
-    Bulb(String id, String name, boolean powered) {
+    Bulb(int id, String name, boolean powered, List<Integer> tags) {
         this.id = id;
         this.name = name;
         this.powered = powered;
+        this.tags = tags;
+    }
+    Bulb(int id, String name, boolean powered) {
+        this.id = id;
+        this.name = name;
+        this.powered = powered;
+        this.tags = new ArrayList<>();
     }
 
-
+    String getTagList() {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < tags.size() - 1; i++) {
+            b.append(tags.get(i)).append(",");
+        }
+        if (tags.size() > 0) {
+            b.append(tags.get(tags.size() - 1));
+        }
+        return b.toString();
+    }
 
     @Override
     public String toString() {

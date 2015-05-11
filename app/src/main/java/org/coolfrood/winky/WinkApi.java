@@ -25,12 +25,12 @@ import java.util.Map;
 
 public class WinkApi {
 
-    private static final String CLIENT_ID = "YOUR_API_CLIENT_ID";
-    private static final String CLIENT_SECRET = "YOUR_API_CLIENT_SECRET";
     private static final String BASE_URL = "https://winkapi.quirky.com";
     private static final String TAG = "WinkApi";
 
     private SharedPreferences prefs;
+    private final String clientId;
+    private final String clientSecret;
 
 
 
@@ -38,6 +38,8 @@ public class WinkApi {
         prefs = ctx.getSharedPreferences("prefs", 0);
         accessToken = prefs.getString("access_token", null);
         refreshToken = prefs.getString("refresh_token", null);
+        clientId = ctx.getResources().getString(R.string.client_id);
+        clientSecret = ctx.getResources().getString(R.string.client_secret);
     }
     private String accessToken = null;
     private String refreshToken = null;
@@ -65,7 +67,7 @@ public class WinkApi {
                         builder.append(output + '\n');
                     }
                     br.close();
-                    System.out.println("get result=" + builder.toString());
+                    //System.out.println("get result=" + builder.toString());
                     return new JSONObject(builder.toString());
                 } else {
                     throw new HTTPException(result);
@@ -176,8 +178,8 @@ public class WinkApi {
             return true;
         try {
             Map<String, String> params = new HashMap<>();
-            params.put("client_id", CLIENT_ID);
-            params.put("client_secret", CLIENT_SECRET);
+            params.put("client_id", clientId);
+            params.put("client_secret", clientSecret);
             params.put("username", username);
             params.put("password", password);
             params.put("grant_type", "password");
@@ -220,8 +222,8 @@ public class WinkApi {
         } catch (HTTPException e) {
             try {
                 Map<String, String> params = new HashMap<>();
-                params.put("client_id", CLIENT_ID);
-                params.put("client_secret", CLIENT_SECRET);
+                params.put("client_id", clientId);
+                params.put("client_secret", clientSecret);
                 params.put("refresh_token", refreshToken);
                 params.put("grant_type", "refresh_token");
                 JSONObject obj = new JSONObject(params);
@@ -269,7 +271,7 @@ public class WinkApi {
             JSONArray devices = resp.getJSONArray("data");
             for (int i = 0; i < devices.length(); i++) {
                 JSONObject device = devices.getJSONObject(i);
-                bulbs.add(new Bulb(device.getString("light_bulb_id"),
+                bulbs.add(new Bulb(Integer.parseInt(device.getString("light_bulb_id")),
                         device.getString("name"),
                         device.getJSONObject("last_reading").getBoolean("powered")));
             }
