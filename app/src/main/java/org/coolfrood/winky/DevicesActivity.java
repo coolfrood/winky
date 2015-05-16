@@ -1,43 +1,43 @@
 package org.coolfrood.winky;
 
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.support.v7.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
-public class Groups extends Activity {
+public class DevicesActivity extends Activity {
 
-    private ListView listView;
+    private RecyclerView recyclerView;
     private RefreshDevicesTask refreshDevicesTask;
     private ToggleDevicesTask toggleDevicesTask;
     private GetDevicesTask getDevicesTask;
-    private ArrayAdapter<Bulb> adapter;
     private NfcAdapter nfcAdapter;
     private DeviceDb deviceDb;
     private TagDb tagDb;
+    private RecyclerView.LayoutManager layoutManager;
+    private RecyclerView.Adapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_groups);
+        setContentView(R.layout.activity_devices);
 
-        listView = (ListView) findViewById(R.id.devices);
+        recyclerView = (RecyclerView) findViewById(R.id.devices);
+        layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+
         WinkyContext.bulbs.clear();
-        adapter = new ArrayAdapter<>(getApplicationContext(),
-                android.R.layout.simple_list_item_1, WinkyContext.bulbs);
-        listView.setAdapter(adapter);
+        adapter = new DeviceAdapter();
+        recyclerView.setAdapter(adapter);
         nfcAdapter = NfcAdapter.getDefaultAdapter(getApplicationContext());
         deviceDb = new DeviceDb(getApplicationContext());
         tagDb = new TagDb(getApplicationContext());
@@ -48,24 +48,20 @@ public class Groups extends Activity {
     public void onResume() {
         super.onResume();
         if (nfcAdapter != null) {
-            PendingIntent intent = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
-                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-            nfcAdapter.enableForegroundDispatch(this, intent, null, null);
+            //PendingIntent intent = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
+                    //.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+            //nfcAdapter.enableForegroundDispatch(this, intent, null, null);
         }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (nfcAdapter != null)
-            nfcAdapter.disableForegroundDispatch(this);
+
+        //if (nfcAdapter != null)
+          //  nfcAdapter.disableForegroundDispatch(this);
     }
 
-    @Override
-    public void onNewIntent(Intent intent) {
-        Log.i("Foreground dispatch", "Discovered tag with intent: " + intent);
-        toggleDevices();
-    }
 
     private void refreshDevices() {
         if (refreshDevicesTask != null)
@@ -107,6 +103,11 @@ public class Groups extends Activity {
             return true;
         } else if (id == R.id.action_refresh) {
             refreshDevices();
+            return true;
+        } else if (id == R.id.action_add_tag) {
+            Intent intent = new Intent(this, TagsActivity.class);
+            startActivity(intent);
+            finish();
             return true;
         }
 
@@ -178,7 +179,7 @@ public class Groups extends Activity {
             if (numOn < WinkyContext.bulbs.size()/2) {
                 powered = true;
             }
-            Log.d("Groups", "switching all bulbs to powered=" + powered);
+            Log.d("DevicesActivity", "switching all bulbs to powered=" + powered);
             for (Bulb b: WinkyContext.bulbs) {
                 WinkyContext.getApi(getApplicationContext()).changeBulbState(b, powered);
             }
@@ -188,7 +189,7 @@ public class Groups extends Activity {
 
         @Override
         protected void onPostExecute(final Boolean res) {
-            //Groups.this.bulbs.addAll(bulbs);
+            //DevicesActivity.this.bulbs.addAll(bulbs);
             adapter.notifyDataSetChanged();
             toggleDevicesTask = null;
 

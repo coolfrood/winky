@@ -36,9 +36,12 @@ public class DeviceDb {
         c.moveToFirst();
         while (!c.isAfterLast()) {
             List<Integer> tags = new ArrayList<>();
-            String[] t = c.getString(3).split(",");
-            for (String s: t) {
-                tags.add(Integer.parseInt(s));
+            String tagString = c.getString(3);
+            if (!tagString.equals("")) {
+                String[] t = tagString.split(",");
+                for (String s : t) {
+                    tags.add(Integer.parseInt(s));
+                }
             }
             Bulb bulb = new Bulb(
                     c.getInt(0),

@@ -1,9 +1,16 @@
 <resources>
     <string name="app_name">Winky</string>
-    <string name="title_activity_groups">Groups</string>
+    <string name="title_activity_devices">Devices</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_nfc">NfcActivity</string>
     <string name="title_activity_tags">NFC Tags</string>
+
+    <string name="tag_add">ADD</string>
+    <string name="tag_ignore">IGNORE</string>
+    <string name="tag_found">Add Tag %s</string>
+    <string name="tag_show">Show/Hide ignored tags</string>
+
+    <string name="addtag_name">Name</string>
 </resources>

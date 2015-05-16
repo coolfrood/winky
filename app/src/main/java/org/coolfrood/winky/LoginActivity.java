@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.ContentResolver;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -303,7 +302,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             showProgress(false);
 
             if (success) {
-                startActivity(new Intent(LoginActivity.this, Groups.class));
+                startActivity(new Intent(LoginActivity.this, DevicesActivity.class));
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
@@ -333,7 +332,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             Log.e("LoginActivity", "verify login success=" + success);
 
             if (success) {
-                startActivity(new Intent(LoginActivity.this, Groups.class));
+                startActivity(new Intent(LoginActivity.this, DevicesActivity.class));
                 finish();
             } else {
                 // could not verify successfully and the access token has been reset

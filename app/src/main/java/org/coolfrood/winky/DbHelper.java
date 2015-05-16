@@ -21,6 +21,7 @@ public class DbHelper extends SQLiteOpenHelper {
             "CREATE TABLE " + TagDb.TABLE + " (" +
             TagDb.ID + " INTEGER PRIMARY KEY, " +
             TagDb.NAME + " TEXT, " +
+            TagDb.DEVICE_ID + " BLOB, " +
             TagDb.IGNORED + " INTEGER)";
 
 

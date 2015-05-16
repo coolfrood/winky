@@ -15,6 +15,7 @@ public class TagDb {
     public static final String ID = "_id"; // this becomes autoincrement on its own in sqlite
     public static final String NAME = "name";
     public static final String IGNORED = "ignored";
+    public static final String DEVICE_ID = "device_id";
 
     public TagDb(Context context) {
         dbHelper = new DbHelper(context);
@@ -29,7 +30,7 @@ public class TagDb {
             selection = IGNORED + " > 0";
         }
         Cursor c = db.query(TABLE,
-                new String[] { ID, NAME },
+                new String[] { ID, NAME, IGNORED, DEVICE_ID },
                 selection,
                 null,
                 null,
@@ -39,7 +40,9 @@ public class TagDb {
         while (!c.isAfterLast()) {
             NfcTag tag = new NfcTag(
                     c.getInt(0),
-                    c.getString(1));
+                    c.getString(1),
+                    c.getInt(2) > 0,
+                    c.getBlob(3));
             tags.add(tag);
             c.moveToNext();
         }
@@ -50,7 +53,7 @@ public class TagDb {
 
     public void remove(NfcTag tag) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete(TABLE, ID + " = ?", new String[] { "" + tag.id });
+        db.delete(TABLE, ID + " = ?", new String[]{"" + tag.id});
         db.close();
     }
 
@@ -58,7 +61,17 @@ public class TagDb {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(NAME, tag.name);
-        db.update(TABLE, values, ID + " = ?", new String[] { "" + tag.id });
+        db.update(TABLE, values, ID + " = ?", new String[]{"" + tag.id});
+        db.close();
+    }
+
+    public void add(NfcTag tag) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(NAME, tag.name);
+        values.put(IGNORED, tag.ignored);
+        values.put(DEVICE_ID, tag.deviceId);
+        db.insert(TABLE, null, values);
         db.close();
     }
 }

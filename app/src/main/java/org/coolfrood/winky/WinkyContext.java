@@ -18,6 +18,7 @@ public class WinkyContext
         return api;
     }
 
+
     public static List<Bulb> bulbs = new ArrayList<>();
     public static Map<Integer, NfcTag> tags = new TreeMap<>();
 }
