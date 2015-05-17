@@ -15,10 +15,13 @@ import android.widget.Toast;
 
 public class AddTagDialogFragment extends DialogFragment {
 
-    public static AddTagDialogFragment newInstance(byte[] id, Tag tag) {
+    public static AddTagDialogFragment newInstance(byte[] id, String name) {
         AddTagDialogFragment frag = new AddTagDialogFragment();
         Bundle args = new Bundle();
         args.putByteArray("device_id", id);
+        if (name != null) {
+            args.putString("name", name);
+        }
         frag.setArguments(args);
         return frag;
     }
@@ -31,6 +34,10 @@ public class AddTagDialogFragment extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         View v = getActivity().getLayoutInflater().inflate(R.layout.dialog_addtag, null);
         final EditText name = (EditText) v.findViewById(R.id.addtag_name);
+        String inpName = getArguments().getString("name", null);
+        if (inpName != null) {
+            name.setText(inpName);
+        }
         builder.setView(v);
         String fmt = getResources().getString(R.string.tag_found);
         builder.setTitle(String.format(fmt, NfcTag.byteArrayToHex(deviceId)))

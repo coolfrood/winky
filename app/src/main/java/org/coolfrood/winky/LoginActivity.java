@@ -11,6 +11,7 @@ import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
 
 import android.os.Build;
@@ -37,13 +38,6 @@ import java.util.List;
  */
 public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -97,7 +91,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        Log.d("LoginActivity", "here1");
 
         if (api.isLoggedIn()) {
             verifyLogin();
@@ -216,6 +209,14 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     }
 
     @Override
+    public void onResume() {
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+            Log.i("LoginActivity", "started due to NDEF");
+        }
+        super.onResume();
+    }
+
+    @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         return new CursorLoader(this,
                 // Retrieve data rows for the device user's 'profile' contact.
@@ -329,7 +330,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         @Override
         protected void onPostExecute(final Boolean success) {
             mVerifyTask = null;
-            Log.e("LoginActivity", "verify login success=" + success);
+            Log.i("LoginActivity", "verify login success=" + success);
 
             if (success) {
                 startActivity(new Intent(LoginActivity.this, DevicesActivity.class));

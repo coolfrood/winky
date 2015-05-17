@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.NFC" />
+    <uses-sdk android:minSdkVersion="21"/>
 
     <uses-feature
         android:name="android.hardware.nfc"
@@ -27,23 +28,25 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+
         </activity>
         <activity
             android:name=".DevicesActivity"
             android:label="@string/title_activity_devices" >
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="vnd.android.nfc"
+                    android:host="ext"
+                    android:pathPrefix="/org.coolfrood.winky:name"/>
             </intent-filter>
-
         </activity>
         <activity
             android:name=".TagsActivity"
             android:label="@string/title_activity_tags" >
 
 
-            <intent-filter>
-                <action android:name="android.nfc.action.TAG_DISCOVERED"/>
-            </intent-filter>
         </activity>
     </application>
 

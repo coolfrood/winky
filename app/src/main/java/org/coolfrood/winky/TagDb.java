@@ -27,7 +27,7 @@ public class TagDb {
         String selection = null;
 
         if (!includeIgnored) {
-            selection = IGNORED + " > 0";
+            selection = IGNORED + " = 0";
         }
         Cursor c = db.query(TABLE,
                 new String[] { ID, NAME, IGNORED, DEVICE_ID },

@@ -55,6 +55,17 @@ public class DeviceDb {
         return bulbs;
     }
 
+    /**
+     * Merge updated information about devices received from the API.
+     * This is usually used to make the device powered state to be in
+     * sync with reality.
+     *
+     * This function modifies the input bulbs list by populating the
+     * tags list of the device if it was found in the DB.
+     *
+     * This will also remove devices that aren't found in the API.
+     * @param bulbs devices discovered via the API.
+     */
     public void mergeWithUpdate(List<Bulb> bulbs) {
         List<Bulb> bulbsFromDb = getBulbs();
         Map<Integer, Bulb> m = new HashMap<>();

@@ -11,18 +11,24 @@ import android.widget.TextView;
 
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
+    private DevicesActivity activity;
+
+    public DeviceAdapter(DevicesActivity activity) {
+        this.activity = activity;
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView textView;
         public ImageButton editButton;
-        public ViewHolder(View v) {
+        public ViewHolder(View v, final DevicesActivity activity) {
             super(v);
             textView = (TextView) v.findViewById(R.id.device_info);
             editButton = (ImageButton) v.findViewById(R.id.device_edit);
             editButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    System.out.println("clicked pos=" + getAdapterPosition());
-
+                    SelectTagsDialogFragment frag = SelectTagsDialogFragment.newInstance(getAdapterPosition());
+                    frag.show(activity.getFragmentManager(), "select_tags");
                 }
             });
         }
@@ -32,18 +38,18 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     public DeviceAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.device_view, parent, false);
-        ViewHolder vh = new ViewHolder(v);
+        ViewHolder vh = new ViewHolder(v, activity);
         return vh;
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.textView.setText(WinkyContext.bulbs.get(position).name);
+        holder.textView.setText(activity.bulbs.get(position).name);
     }
 
     @Override
     public int getItemCount() {
-        return WinkyContext.bulbs.size();
+        return activity.bulbs.size();
     }
 
 }

@@ -13,4 +13,8 @@
     <string name="tag_show">Show/Hide ignored tags</string>
 
     <string name="addtag_name">Name</string>
+
+    <string name="selecttags_title">Tags</string>
+    <string name="selecttags_update">Update</string>
+    <string name="selecttags_cancel">Cancel</string>
 </resources>

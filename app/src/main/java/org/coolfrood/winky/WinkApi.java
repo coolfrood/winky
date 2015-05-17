@@ -109,7 +109,6 @@ public class WinkApi {
                         builder.append(output + '\n');
                     }
                     br.close();
-                    System.out.println("ret = " + builder.toString());
                     return new JSONObject(builder.toString());
                 } else {
                     throw new IOException("HTTP Error: " + result);
@@ -252,6 +251,7 @@ public class WinkApi {
             desiredState.put("powered", powered);
             obj.put("desired_state", desiredState);
             doPut("/light_bulbs/" + bulb.id, obj);
+            Log.d(TAG, "Switched " + bulb.name + " to " + powered);
             bulb.powered = powered;
             return true;
         } catch (JSONException e) {

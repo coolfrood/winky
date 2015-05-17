@@ -11,6 +11,7 @@ import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -36,13 +37,15 @@ public class TagsActivity extends Activity {
     private List<NfcTag> ignoredTags = new ArrayList<>();
     private RecyclerView.LayoutManager layoutManager;
     private TagAdapter adapter;
-    private Tag tagToAdd;
+    private RegisterParams tagToAdd;
     private RecyclerView recyclerView;
     private boolean dialogActive = false;
 
     private boolean gotTags = false;
 
     private static String[][] techList = { new String[] { Ndef.class.getName() }};
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,19 +78,41 @@ public class TagsActivity extends Activity {
         }
         return false;
     }
+
+    private RegisterParams createNewTagParams(Tag t, Parcelable[] rawMsgs) {
+        RegisterParams p = new RegisterParams(new NfcTag(0, null, false, t.getId()), t);
+        if (rawMsgs != null && rawMsgs.length >= 1) {
+            NdefMessage msg = (NdefMessage) rawMsgs[0];
+            NdefRecord[] records = msg.getRecords();
+            for (NdefRecord r: records) {
+                if (r.getTnf() == NdefRecord.TNF_EXTERNAL_TYPE) {
+                    String tpe = new String(r.getType());
+                    Log.i("TagsActivity", "tpe=" + tpe);
+                    String payload = new String(r.getPayload());
+
+                    if (tpe.equals("org.coolfrood.winky:name")) {
+                        p.nfcTag.name = payload;
+                    }
+                }
+            }
+        }
+        return p;
+    }
     @Override
     public void onNewIntent(Intent intent) {
         Log.i("Foreground dispatch", "Discovered tag with intent: " + intent);
         if (gotTags && !dialogActive) {
             Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            //Log.i("TagsActivity", "rawMsgs.size=" + rawMsgs.length);
             byte[] id = tag.getId();
             boolean found = tagExists(registeredTags, id) || tagExists(ignoredTags, id);
 
             Log.i("TagsActivity", tag.toString());
 
             if (!found) {
-                tagToAdd = tag;
-                AddTagDialogFragment newTag = AddTagDialogFragment.newInstance(id, tag);
+                tagToAdd = createNewTagParams(tag, rawMsgs);
+                AddTagDialogFragment newTag = AddTagDialogFragment.newInstance(id, tagToAdd.nfcTag.name);
                 newTag.show(getFragmentManager(), "add_tag");
                 dialogActive = true;
             }
@@ -145,8 +170,8 @@ public class TagsActivity extends Activity {
         dialogActive = false;
         NfcTag nfcTag = new NfcTag(0, name, false, deviceId);
         if (registerTagTask == null) {
-            registerTagTask = new RegisterTagTask();
-            RegisterParams p = new RegisterParams(nfcTag, tagToAdd);
+            registerTagTask = new RegisterTagTask(tagToAdd.nfcTag.name == null);
+            RegisterParams p = new RegisterParams(nfcTag, tagToAdd.tag);
             registerTagTask.execute(p);
             tagToAdd = null;
         }
@@ -204,17 +229,29 @@ public class TagsActivity extends Activity {
     private class RegisterTagTask extends AsyncTask<RegisterParams, Void, List<NfcTag>> {
 
         private String errMsg = null;
+        private boolean doProgramTag = false;
+
+        public RegisterTagTask(boolean doProgramTag) {
+            this.doProgramTag = doProgramTag;
+        }
 
         @Override
         protected List<NfcTag> doInBackground(RegisterParams... params) {
             RegisterParams p = params[0];
-            WriteResponse resp = writeTag(p.tag, p.nfcTag.name, p.nfcTag.deviceId);
-            if (resp.success) {
+
+            if (doProgramTag) {
+                Log.i("TagsActivity", "Programming tag");
+                WriteResponse resp = writeTag(p.tag, p.nfcTag.name, p.nfcTag.deviceId);
+                if (resp.success) {
+                    tagDb.add(p.nfcTag);
+                    return tagDb.getTags(true);
+                } else {
+                    errMsg = resp.message;
+                    return null;
+                }
+            } else {
                 tagDb.add(p.nfcTag);
                 return tagDb.getTags(true);
-            } else {
-                errMsg = resp.message;
-                return null;
             }
         }
 
@@ -263,11 +300,16 @@ public class TagsActivity extends Activity {
         NdefMessage msg = new NdefMessage(
                 new NdefRecord[] {
                      NdefRecord.createExternal("org.coolfrood.winky", "name", name.getBytes()),
-                     NdefRecord.createExternal("org.coolfrood.winky", "id", deviceId),
-                     NdefRecord.createApplicationRecord("org.coolfrood.winky")
+                     NdefRecord.createExternal("org.coolfrood.winky", "id", deviceId)
+                     //,NdefRecord.createApplicationRecord("org.coolfrood.winky")
 
                 }
         );
+        /*
+        NdefMessage msg = new NdefMessage(
+                new NdefRecord(NdefRecord.TNF_EMPTY, null, null, null)
+        );
+        */
         try {
             Ndef ndef = Ndef.get(tag);
             if (ndef != null) {
